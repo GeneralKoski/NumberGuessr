@@ -1,13 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Hash,
-  Home,
-  ShieldAlert,
-  Sparkles,
-  Swords,
-  Trophy,
-  User,
-} from "lucide-react";
+import { Hash, Home, Sparkles, Swords, Trophy, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Landing from "./components/Landing";
@@ -18,7 +10,6 @@ type Player = {
   id: string;
   username: string;
   secretNumber: number | null;
-  hasLied: boolean;
   guesses: any[];
 };
 
@@ -39,9 +30,9 @@ export default function App() {
   const [isJoined, setIsJoined] = useState(false);
   const [secretInput, setSecretInput] = useState("");
   const [guessInput, setGuessInput] = useState("");
-  const [willLie, setWillLie] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [opponentLeftMsg, setOpponentLeftMsg] = useState(false);
 
   useEffect(() => {
     socket.on("room-joined", ({ room, roomId }) => {
@@ -60,8 +51,7 @@ export default function App() {
     });
 
     socket.on("player-left", () => {
-      alert(t("error.opponentLeft"));
-      window.location.reload();
+      setOpponentLeftMsg(true);
     });
 
     return () => {
@@ -109,9 +99,8 @@ export default function App() {
   const makeGuess = () => {
     const num = parseInt(guessInput);
     if (isNaN(num)) return;
-    socket.emit("make-guess", { roomId: room!.id, guess: num, lie: willLie });
+    socket.emit("make-guess", { roomId: room!.id, guess: num });
     setGuessInput("");
-    setWillLie(false);
   };
 
   const copyRoomId = () => {
@@ -158,6 +147,22 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col selection:bg-[var(--accent-color)] selection:text-black">
+      {opponentLeftMsg && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#111] p-8 rounded-3xl border border-[var(--accent-color)]/30 shadow-2xl text-center max-w-sm w-full mx-4">
+            <h3 className="text-2xl font-black text-white mb-6 uppercase tracking-wider">
+              {t("error.opponentLeft")}
+            </h3>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-4 bg-gradient-to-r from-[var(--accent-color)] to-[var(--accent-hover)] text-[#0b0f19] font-black rounded-2xl cursor-pointer hover:scale-105 transition-all shadow-xl active:scale-95 uppercase tracking-widest"
+            >
+              {t("end.mainMenu")}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header matching KosQuiz style */}
       <header className="relative flex items-center justify-between px-8 py-6 border-b border-white/5 bg-[#0b0f19]/80 backdrop-blur-md sticky top-0 z-50">
         <div className="w-32" /> {/* Spacer to center title */}
@@ -349,28 +354,12 @@ export default function App() {
                           />
                         </div>
 
-                        <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex flex-col gap-4">
                           <button
                             onClick={makeGuess}
-                            className="flex-3 py-5 bg-gradient-to-r from-[var(--accent-color)] to-[var(--accent-hover)] rounded-2xl font-black text-xl text-[#0b0f19] shadow-xl hover:shadow-[var(--accent-color)]/20 transition-all active:scale-95 cursor-pointer uppercase tracking-widest"
+                            className="w-full py-5 bg-gradient-to-r from-[var(--accent-color)] to-[var(--accent-hover)] rounded-2xl font-black text-xl text-[#0b0f19] shadow-xl hover:shadow-[var(--accent-color)]/20 transition-all active:scale-95 cursor-pointer uppercase tracking-widest"
                           >
                             {t("game.guess")}
-                          </button>
-
-                          <button
-                            onClick={() => !me?.hasLied && setWillLie(!willLie)}
-                            disabled={me?.hasLied}
-                            className={`flex-1 px-6 rounded-2xl border transition-all flex items-center justify-center gap-2 group ${willLie ? "bg-red-500 border-red-400 text-white" : me?.hasLied ? "opacity-30 border-white/10 grayscale cursor-not-allowed" : "bg-white/5 border-white/10 hover:bg-red-500/20 cursor-pointer"}`}
-                            title="Cheat once per game"
-                          >
-                            <ShieldAlert
-                              className={`w-6 h-6 ${willLie ? "animate-bounce" : "group-hover:scale-110"}`}
-                            />
-                            {willLie && (
-                              <span className="font-black text-[10px] uppercase tracking-tighter">
-                                {t("game.lying")}
-                              </span>
-                            )}
                           </button>
                         </div>
                       </div>
@@ -428,9 +417,6 @@ export default function App() {
                       <div className="text-4xl font-black text-white/80">
                         {me?.secretNumber}
                       </div>
-                    </div>
-                    <div className="hidden sm:block p-4 border border-white/5 rounded-2xl bg-white/5 group transition-all hover:bg-[var(--accent-color)]/10">
-                      <ShieldAlert className="w-6 h-6 text-white/10 group-hover:text-[var(--accent-color)]" />
                     </div>
                   </div>
                 </motion.div>

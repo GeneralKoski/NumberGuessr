@@ -12,7 +12,6 @@ app.use(cors());
  * @typedef {Object} Guess
  * @property {number} value
  * @property {'higher' | 'lower' | 'correct'} feedback
- * @property {boolean} lie
  * @property {number} timestamp
  * @property {string} playerId
  */
@@ -22,7 +21,6 @@ app.use(cors());
  * @property {string} id
  * @property {string} username
  * @property {number | null} secretNumber
- * @property {boolean} hasLied
  * @property {Guess[]} guesses
  */
 
@@ -52,6 +50,23 @@ const io = new Server(httpServer, {
 const rooms = new Map();
 
 io.on("connection", (socket) => {
+  const TOKEN_WINDOW_MS = 10000;
+  const TOKEN_MAX_EVENTS = 50;
+
+  const rl = { count: 0, resetAt: Date.now() + TOKEN_WINDOW_MS };
+  socket.use((packet, next) => {
+    const now = Date.now();
+    if (now > rl.resetAt) {
+      rl.count = 0;
+      rl.resetAt = now + TOKEN_WINDOW_MS;
+    }
+    rl.count++;
+    if (rl.count > TOKEN_MAX_EVENTS) {
+      return next(new Error("rate_limit"));
+    }
+    next();
+  });
+
   const emitLobbies = () => {
     const publicLobbies = [];
     for (const [id, room] of rooms.entries()) {
@@ -105,7 +120,6 @@ io.on("connection", (socket) => {
           id: socket.id,
           username: name,
           secretNumber: null,
-          hasLied: false,
           guesses: [],
         },
       ],
@@ -146,7 +160,6 @@ io.on("connection", (socket) => {
           id: socket.id,
           username: user,
           secretNumber: null,
-          hasLied: false,
           guesses: [],
         },
       ],
@@ -164,11 +177,23 @@ io.on("connection", (socket) => {
   socket.on("lobby:join", ({ name, code }, cb) => {
     const room = rooms.get(code);
     if (!room) {
-      if (cb) cb({ error: "Lobby not found" });
+      const msg = "Lobby not found";
+      if (cb) cb({ error: msg });
+      socket.emit("error", msg);
       return;
     }
     if (room.players.length >= 2) {
-      if (cb) cb({ error: "Lobby full" });
+      const msg = "Lobby full";
+      if (cb) cb({ error: msg });
+      socket.emit("error", msg);
+      return;
+    }
+    if (
+      room.players.some((p) => p.username.toLowerCase() === name.toLowerCase())
+    ) {
+      const msg = "Name already taken in this lobby";
+      if (cb) cb({ error: msg });
+      socket.emit("error", msg);
       return;
     }
 
@@ -176,7 +201,6 @@ io.on("connection", (socket) => {
       id: socket.id,
       username: name,
       secretNumber: null,
-      hasLied: false,
       guesses: [],
     });
     socket.join(code);
@@ -207,11 +231,17 @@ io.on("connection", (socket) => {
       return;
     }
 
+    if (
+      room.players.some((p) => p.username.toLowerCase() === user.toLowerCase())
+    ) {
+      socket.emit("error", "Name already taken in this lobby");
+      return;
+    }
+
     room.players.push({
       id: socket.id,
       username: user,
       secretNumber: null,
-      hasLied: false,
       guesses: [],
     });
     socket.join(rId);
@@ -246,7 +276,7 @@ io.on("connection", (socket) => {
     io.to(rId).emit("room-update", room);
   });
 
-  socket.on("make-guess", ({ roomId, guess, lie = false }) => {
+  socket.on("make-guess", ({ roomId, guess }) => {
     /** @type {string} */
     const rId = roomId;
     /** @type {number} */
@@ -267,25 +297,14 @@ io.on("connection", (socket) => {
 
     /** @type {'higher' | 'lower' | 'correct'} */
     let feedback;
-    let actualLie = false;
 
-    if (lie && !player.hasLied) {
-      player.hasLied = true;
-      actualLie = true;
-      // Lie: say the opposite of truth
-      if (guessedValue < targetValue) feedback = "lower";
-      else if (guessedValue > targetValue) feedback = "higher";
-      else feedback = "higher"; // Lie even if correct? Let's say if you lie on the correct number, you just say higher/lower
-    } else {
-      if (guessedValue < targetValue) feedback = "higher";
-      else if (guessedValue > targetValue) feedback = "lower";
-      else feedback = "correct";
-    }
+    if (guessedValue < targetValue) feedback = "higher";
+    else if (guessedValue > targetValue) feedback = "lower";
+    else feedback = "correct";
 
     player.guesses.push({
       value: guessedValue,
       feedback,
-      lie: actualLie,
       timestamp: Date.now(),
       playerId: socket.id,
     });
