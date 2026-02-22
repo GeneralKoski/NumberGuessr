@@ -6,7 +6,7 @@
     "dev": "npm run kill-port && node --watch index.js",
     "start": "node index.js",
     "lint": "eslint .",
-    "kill-port": "lsof -i :3001 -t | xargs kill -9 || true"
+    "kill-port": "lsof -i :3002 -t | xargs kill -9 || true"
   },
   "dependencies": {
     "better-sqlite3": "^12.6.2",

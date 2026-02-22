@@ -27,7 +27,7 @@ Basato sullo stack tecnologico di **KosQuiz**.
 
 1. Vai nella cartella `server`: `cd server`
 2. Installa le dipendenze: `npm install`
-3. Avvia il server: `npm run dev` (Porta predefinita: 3001)
+3. Avvia il server: `npm run dev` (Porta predefinita: 3002)
 
 ### Frontend (Client)
 
