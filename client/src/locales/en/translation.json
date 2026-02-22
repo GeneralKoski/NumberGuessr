@@ -1,14 +1,32 @@
 {
   "appName": "GUESS 1v1",
+  "landing": {
+    "welcome": "Welcome to NumberGuessr!",
+    "subtitle": "Guess the number and defeat your opponent.",
+    "publicLobbies": "Public Lobbies",
+    "noPublicLobbies": "No public lobbies available",
+    "players": "Players",
+    "hostedBy": "Host",
+    "leaderboard": "Global Leaderboard",
+    "emptyLeaderboard": "No leaderboard data",
+    "publicLobby": "Public Lobby",
+    "privateLobby": "Private Lobby"
+  },
+  "leaderboard": {
+    "mostWins": "Most Wins",
+    "mostLosses": "Most Losses",
+    "wins": "Wins",
+    "losses": "Losses"
+  },
   "lobby": {
     "yourName": "Your Name",
-    "namePlaceholder": "Enter name...",
+    "namePlaceholder": "Enter your display name",
     "lobbyId": "Lobby ID",
-    "codePlaceholder": "Lobby code...",
+    "codePlaceholder": "Lobby code",
     "min": "Min",
     "max": "Max",
-    "join": "Join",
-    "create": "Create",
+    "join": "Join Lobby",
+    "create": "Create Lobby",
     "status": "Lobby Status",
     "copied": "Copied!",
     "waitingOpponent": "Waiting for opponent...",
@@ -44,6 +62,8 @@
     "mainMenu": "Main Menu"
   },
   "error": {
+    "nameRequired": "Name is required",
+    "lobbyNotFound": "Lobby not found",
     "range": "Choice must be between {{min}} and {{max}}",
     "opponentLeft": "Opponent left the game"
   }

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import Landing from "./components/Landing";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import socket from "./socket";
 
@@ -40,13 +41,12 @@ export default function App() {
   const [guessInput, setGuessInput] = useState("");
   const [willLie, setWillLie] = useState(false);
   const [error, setError] = useState("");
-  const [minRange, setMinRange] = useState(1);
-  const [maxRange, setMaxRange] = useState(100);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    socket.on("room-joined", ({ room }) => {
+    socket.on("room-joined", ({ room, roomId }) => {
       setRoom(room);
+      if (roomId) setRoomId(roomId);
       setIsJoined(true);
       setError("");
     });
@@ -72,18 +72,25 @@ export default function App() {
     };
   }, [t]);
 
-  const createRoom = () => {
-    if (!username || !roomId) return;
-    socket.emit("create-room", {
-      roomId,
-      username,
-      settings: { min: minRange, max: maxRange },
-    });
-  };
-
-  const joinRoom = () => {
-    if (!username || !roomId) return;
-    socket.emit("join-room", { roomId, username });
+  const handleJoinLobby = (
+    name: string,
+    code?: string,
+    isCreating?: boolean,
+    isPublic?: boolean,
+    minRange?: number,
+    maxRange?: number,
+  ) => {
+    setUsername(name);
+    if (isCreating) {
+      socket.emit("lobby:create", {
+        name,
+        isPublic,
+        settings: { min: minRange, max: maxRange },
+      });
+    } else {
+      setRoomId(code || "");
+      socket.emit("lobby:join", { name, code });
+    }
   };
 
   const setSecret = () => {
@@ -121,104 +128,30 @@ export default function App() {
 
   if (!isJoined) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md p-8 bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl"
-        >
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-[var(--accent-color)] rounded-2xl">
-                <Hash className="w-8 h-8 text-white" />
-              </div>
-              <h1 className="text-4xl font-black bg-gradient-to-r from-[var(--accent-color)] to-[var(--accent-hover)] bg-clip-text text-transparent italic tracking-tighter">
-                {t("appName")}
-              </h1>
-            </div>
+      <div className="min-h-screen flex flex-col selection:bg-[var(--accent-color)] selection:text-black">
+        {/* Header */}
+        <header className="relative flex items-center justify-between px-8 py-6 border-b border-white/5 bg-[#0b0f19]/80 backdrop-blur-md sticky top-0 z-50">
+          <div className="w-32" />
+          <button
+            onClick={() => window.location.reload()}
+            className="text-3xl font-black tracking-tighter uppercase cursor-pointer text-[var(--accent-color)] hover:text-[var(--accent-hover)] transition-all hover:scale-105 active:scale-95"
+          >
+            {t("appName")}
+          </button>
+          <div className="w-32 flex justify-end">
             <LanguageSwitcher />
           </div>
+        </header>
 
-          <div className="space-y-6">
-            <div>
-              <label className="block text-xs font-black text-gray-400 mb-2 ml-1 uppercase tracking-widest">
-                {t("lobby.yourName")}
-              </label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-[var(--accent-color)] outline-none transition-all"
-                  placeholder={t("lobby.namePlaceholder")}
-                />
-              </div>
-            </div>
+        <main className="flex-1 flex items-center justify-center py-8">
+          <Landing onJoinLobby={handleJoinLobby} />
+        </main>
 
-            <div>
-              <label className="block text-xs font-black text-gray-400 mb-2 ml-1 uppercase tracking-widest">
-                {t("lobby.lobbyId")}
-              </label>
-              <div className="relative">
-                <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                <input
-                  type="text"
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-[var(--accent-color)] outline-none transition-all font-mono"
-                  placeholder={t("lobby.codePlaceholder")}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-black text-gray-400 mb-2 ml-1 uppercase tracking-widest">
-                  {t("lobby.min")}
-                </label>
-                <input
-                  type="number"
-                  value={minRange}
-                  onChange={(e) => setMinRange(parseInt(e.target.value))}
-                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[var(--accent-color)] outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-black text-gray-400 mb-2 ml-1 uppercase tracking-widest">
-                  {t("lobby.max")}
-                </label>
-                <input
-                  type="number"
-                  value={maxRange}
-                  onChange={(e) => setMaxRange(parseInt(e.target.value))}
-                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-[var(--accent-color)] outline-none"
-                />
-              </div>
-            </div>
-
-            {error && (
-              <p className="text-red-400 text-sm text-center font-medium animate-pulse">
-                {error}
-              </p>
-            )}
-
-            <div className="flex space-x-4 pt-4">
-              <button
-                onClick={joinRoom}
-                className="flex-1 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-sm transition-all active:scale-95 cursor-pointer"
-              >
-                {t("lobby.join")}
-              </button>
-              <button
-                onClick={createRoom}
-                className="flex-1 py-4 bg-gradient-to-r from-[var(--accent-color)] to-[var(--accent-hover)] hover:shadow-lg hover:shadow-[var(--accent-color)]/20 rounded-2xl font-black uppercase tracking-widest text-sm text-[#0b0f19] transition-all active:scale-95 cursor-pointer"
-              >
-                {t("lobby.create")}
-              </button>
-            </div>
+        {error && (
+          <div className="fixed bottom-4 right-4 bg-red-500/90 text-white px-6 py-3 rounded-2xl shadow-xl z-50 animate-bounce">
+            {error}
           </div>
-        </motion.div>
+        )}
       </div>
     );
   }
@@ -230,7 +163,7 @@ export default function App() {
         <div className="w-32" /> {/* Spacer to center title */}
         <button
           onClick={() => window.location.reload()}
-          className="text-3xl font-black tracking-tighter uppercase cursor-pointer text-[var(--accent-color)] hover:text-[var(--accent-hover)] transition-all italic hover:scale-105 active:scale-95"
+          className="text-3xl font-black tracking-tighter uppercase cursor-pointer text-[var(--accent-color)] hover:text-[var(--accent-hover)] transition-all hover:scale-105 active:scale-95"
         >
           {t("appName")}
         </button>

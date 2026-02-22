@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { dao } from "./db.js";
 
 /** @type {import('express').Application} */
 const app = express();
@@ -28,6 +29,8 @@ app.use(cors());
 /**
  * @typedef {Object} Room
  * @property {string} id
+ * @property {boolean} isPublic
+ * @property {string} hostName
  * @property {{min: number, max: number}} settings
  * @property {Player[]} players
  * @property {'waiting' | 'picking' | 'playing' | 'finished'} status
@@ -51,9 +54,79 @@ const rooms = new Map();
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  socket.on("create-room", ({ roomId, username, settings }) => {
+  const emitLobbies = () => {
+    const publicLobbies = [];
+    for (const [id, room] of rooms.entries()) {
+      if (room.isPublic && room.status === "waiting") {
+        publicLobbies.push({
+          code: room.id,
+          playerCount: room.players.length,
+          hostName: room.hostName,
+        });
+      }
+    }
+    io.emit("lobbies:update", publicLobbies);
+  };
+
+  socket.on("lobby:list", (cb) => {
+    const publicLobbies = [];
+    for (const [id, room] of rooms.entries()) {
+      if (room.isPublic && room.status === "waiting") {
+        publicLobbies.push({
+          code: room.id,
+          playerCount: room.players.length,
+          hostName: room.hostName,
+        });
+      }
+    }
+    cb(publicLobbies);
+  });
+
+  socket.on("game:leaderboard", (cb) => {
+    cb({ leaderboard: dao.getLeaderboard() });
+  });
+
+  socket.on("lobby:create", ({ name, isPublic, settings }, cb) => {
+    // Generate random code
+    let roomId = "";
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    for (let i = 0; i < 6; i++) {
+      roomId += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    const opts = settings || { min: 1, max: 100 };
+
+    /** @type {Room} */
+    const room = {
+      id: roomId,
+      isPublic: !!isPublic,
+      hostName: name,
+      settings: opts,
+      players: [
+        {
+          id: socket.id,
+          username: name,
+          secretNumber: null,
+          hasLied: false,
+          guesses: [],
+        },
+      ],
+      status: "waiting",
+    };
+
+    rooms.set(roomId, room);
+    socket.join(roomId);
+
+    emitLobbies();
+
+    if (cb) cb({ lobby: room });
+    socket.emit("room-joined", { roomId, room });
+  });
+
+  socket.on("create-room", ({ roomId, username, settings, isPublic }) => {
     /** @type {string} */
-    const rId = roomId;
+    const rId =
+      roomId || Math.random().toString(36).substring(2, 8).toUpperCase();
     /** @type {string} */
     const user = username;
     /** @type {{min: number, max: number}} */
@@ -67,6 +140,8 @@ io.on("connection", (socket) => {
     /** @type {Room} */
     const room = {
       id: rId,
+      isPublic: !!isPublic,
+      hostName: user,
       settings: opts,
       players: [
         {
@@ -82,7 +157,39 @@ io.on("connection", (socket) => {
 
     rooms.set(rId, room);
     socket.join(rId);
+
+    emitLobbies();
+
     socket.emit("room-joined", { roomId: rId, room });
+  });
+
+  socket.on("lobby:join", ({ name, code }, cb) => {
+    const room = rooms.get(code);
+    if (!room) {
+      if (cb) cb({ error: "Lobby not found" });
+      return;
+    }
+    if (room.players.length >= 2) {
+      if (cb) cb({ error: "Lobby full" });
+      return;
+    }
+
+    room.players.push({
+      id: socket.id,
+      username: name,
+      secretNumber: null,
+      hasLied: false,
+      guesses: [],
+    });
+    socket.join(code);
+
+    if (room.players.length === 2) {
+      room.status = "picking";
+      emitLobbies();
+    }
+
+    if (cb) cb({ lobby: room });
+    io.to(code).emit("room-joined", { roomId: code, room });
   });
 
   socket.on("join-room", ({ roomId, username }) => {
@@ -113,6 +220,7 @@ io.on("connection", (socket) => {
 
     if (room.players.length === 2) {
       room.status = "picking";
+      emitLobbies();
     }
 
     io.to(rId).emit("room-joined", { roomId: rId, room });
@@ -187,6 +295,13 @@ io.on("connection", (socket) => {
     if (feedback === "correct") {
       room.status = "finished";
       room.winner = player.username;
+
+      try {
+        dao.recordGameResult(player.username, true);
+        dao.recordGameResult(opponent.username, false);
+      } catch (e) {
+        console.error("Failed to record game result", e);
+      }
     } else {
       room.turn = opponent.id;
     }
@@ -196,13 +311,16 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
+    let lobbiesChanged = false;
     // Cleanup rooms
     for (const [roomId, room] of rooms.entries()) {
       if (room.players.some((p) => p.id === socket.id)) {
         io.to(roomId).emit("player-left", socket.id);
         rooms.delete(roomId);
+        if (room.isPublic && room.status === "waiting") lobbiesChanged = true;
       }
     }
+    if (lobbiesChanged) emitLobbies();
   });
 });
 

@@ -1,14 +1,32 @@
 {
   "appName": "GUESS 1v1",
+  "landing": {
+    "welcome": "Benvenuto in NumberGuessr!",
+    "subtitle": "Indovina il numero e sconfiggi l'avversario.",
+    "publicLobbies": "Lobby Pubbliche",
+    "noPublicLobbies": "Nessuna lobby pubblica disponibile",
+    "players": "Giocatori",
+    "hostedBy": "Host",
+    "leaderboard": "Classifica Globale",
+    "emptyLeaderboard": "Nessun dato in classifica",
+    "publicLobby": "Lobby pubblica",
+    "privateLobby": "Lobby privata"
+  },
+  "leaderboard": {
+    "mostWins": "Più Vittorie",
+    "mostLosses": "Più Sconfitte",
+    "wins": "Vittorie",
+    "losses": "Sconfitte"
+  },
   "lobby": {
     "yourName": "Tuo Nome",
-    "namePlaceholder": "Inserisci nome...",
+    "namePlaceholder": "Inserisci il tuo nome",
     "lobbyId": "ID Lobby",
-    "codePlaceholder": "Codice stanza...",
+    "codePlaceholder": "Codice lobby",
     "min": "Min",
     "max": "Max",
-    "join": "Entra",
-    "create": "Crea",
+    "join": "Entra nella Lobby",
+    "create": "Crea Lobby",
     "status": "Stato Lobby",
     "copied": "Copiato!",
     "waitingOpponent": "In attesa dell'avversario...",
@@ -44,6 +62,8 @@
     "mainMenu": "Menu Principale"
   },
   "error": {
+    "nameRequired": "Il nome è obbligatorio",
+    "lobbyNotFound": "Lobby non trovata",
     "range": "La scelta deve essere tra {{min}} e {{max}}",
     "opponentLeft": "L'avversario ha lasciato la partita"
   }
