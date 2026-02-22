@@ -52,8 +52,6 @@ const io = new Server(httpServer, {
 const rooms = new Map();
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-
   const emitLobbies = () => {
     const publicLobbies = [];
     for (const [id, room] of rooms.entries()) {
@@ -310,7 +308,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
     let lobbiesChanged = false;
     // Cleanup rooms
     for (const [roomId, room] of rooms.entries()) {
