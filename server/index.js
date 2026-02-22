@@ -19,6 +19,7 @@ app.use(cors());
 /**
  * @typedef {Object} Player
  * @property {string} id
+ * @property {string} token
  * @property {string} username
  * @property {number | null} secretNumber
  * @property {Guess[]} guesses
@@ -50,6 +51,7 @@ const io = new Server(httpServer, {
 const rooms = new Map();
 
 io.on("connection", (socket) => {
+  const token = socket.handshake.auth?.token || socket.id;
   const TOKEN_WINDOW_MS = 10000;
   const TOKEN_MAX_EVENTS = 50;
 
@@ -118,6 +120,7 @@ io.on("connection", (socket) => {
       players: [
         {
           id: socket.id,
+          token,
           username: name,
           secretNumber: null,
           guesses: [],
@@ -158,6 +161,7 @@ io.on("connection", (socket) => {
       players: [
         {
           id: socket.id,
+          token,
           username: user,
           secretNumber: null,
           guesses: [],
@@ -199,6 +203,7 @@ io.on("connection", (socket) => {
 
     room.players.push({
       id: socket.id,
+      token,
       username: name,
       secretNumber: null,
       guesses: [],
@@ -240,6 +245,7 @@ io.on("connection", (socket) => {
 
     room.players.push({
       id: socket.id,
+      token,
       username: user,
       secretNumber: null,
       guesses: [],
@@ -314,8 +320,8 @@ io.on("connection", (socket) => {
       room.winner = player.username;
 
       try {
-        dao.recordGameResult(player.username, true);
-        dao.recordGameResult(opponent.username, false);
+        dao.recordGameResult(player.token, player.username, true);
+        dao.recordGameResult(opponent.token, opponent.username, false);
       } catch (e) {
         console.error("Failed to record game result", e);
       }

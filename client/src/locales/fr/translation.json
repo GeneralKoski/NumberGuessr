@@ -1,5 +1,5 @@
 {
-  "appName": "GUESS 1v1",
+  "appName": "NumberGuessr",
   "lobby": {
     "yourName": "Votre Nom",
     "namePlaceholder": "Entrez le nom...",

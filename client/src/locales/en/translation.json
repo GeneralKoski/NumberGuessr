@@ -1,5 +1,5 @@
 {
-  "appName": "GUESS 1v1",
+  "appName": "NumberGuessr",
   "landing": {
     "welcome": "Welcome to NumberGuessr!",
     "subtitle": "Guess the number and defeat your opponent.",
