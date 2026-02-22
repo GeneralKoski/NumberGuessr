@@ -1,0 +1,50 @@
+{
+  "appName": "GUESS 1v1",
+  "lobby": {
+    "yourName": "Your Name",
+    "namePlaceholder": "Enter name...",
+    "lobbyId": "Lobby ID",
+    "codePlaceholder": "Lobby code...",
+    "min": "Min",
+    "max": "Max",
+    "join": "Join",
+    "create": "Create",
+    "status": "Lobby Status",
+    "copied": "Copied!",
+    "waitingOpponent": "Waiting for opponent...",
+    "shareCode": "Share code {{code}} to start"
+  },
+  "picking": {
+    "title": "PICK YOUR NUMBER",
+    "range": "Range: {{min}} - {{max}}",
+    "yourNumber": "Your number is",
+    "opponentThinking": "Opponent thinking...",
+    "placeholder": "?",
+    "confirm": "CONFIRM"
+  },
+  "game": {
+    "yourTurn": "YOUR TURN",
+    "opponentTurn": "OPPONENT'S TURN",
+    "guess": "GUESS",
+    "lying": "LYING",
+    "opponentLying": "Opponent is lying...",
+    "opponentPlaying": "Opponent is playing...",
+    "yourSecretNumber": "Your Secret Number",
+    "history": "Match History",
+    "totalGuesses": "{{count}} TOTAL GUESSES",
+    "noGuesses": "The duel has begun",
+    "higher": "higher",
+    "lower": "lower",
+    "winnerBadge": "WINNER!"
+  },
+  "end": {
+    "victory": "VICTORY!",
+    "defeat": "DEFEAT",
+    "winner": "{{winner}} Wins",
+    "mainMenu": "Main Menu"
+  },
+  "error": {
+    "range": "Choice must be between {{min}} and {{max}}",
+    "opponentLeft": "Opponent left the game"
+  }
+}

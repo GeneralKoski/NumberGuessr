@@ -3,12 +3,19 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch index.js",
-    "start": "node index.js"
+    "dev": "npm run kill-port && node --watch index.js",
+    "start": "node index.js",
+    "lint": "eslint .",
+    "kill-port": "lsof -i :3001 -t | xargs kill -9 || true"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "socket.io": "^4.7.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.1",
+    "globals": "^17.3.0"
   }
 }

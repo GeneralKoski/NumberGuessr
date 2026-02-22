@@ -1,0 +1,50 @@
+{
+  "appName": "GUESS 1v1",
+  "lobby": {
+    "yourName": "Votre Nom",
+    "namePlaceholder": "Entrez le nom...",
+    "lobbyId": "ID du Lobby",
+    "codePlaceholder": "Code du lobby...",
+    "min": "Min",
+    "max": "Max",
+    "join": "Rejoindre",
+    "create": "Créer",
+    "status": "Statut du Lobby",
+    "copied": "Copié!",
+    "waitingOpponent": "En attente de l'adversaire...",
+    "shareCode": "Partagez le code {{code}} pour commencer"
+  },
+  "picking": {
+    "title": "CHOISISSEZ VOTRE NOMBRE",
+    "range": "Plage: {{min}} - {{max}}",
+    "yourNumber": "Votre nombre est",
+    "opponentThinking": "L'adversaire réfléchit...",
+    "placeholder": "?",
+    "confirm": "CONFIRMER"
+  },
+  "game": {
+    "yourTurn": "VOTRE TOUR",
+    "opponentTurn": "TOUR DE L'ADVERSAIRE",
+    "guess": "DEVINER",
+    "lying": "VOUS MENTEZ",
+    "opponentLying": "L'adversaire ment...",
+    "opponentPlaying": "L'adversaire joue...",
+    "yourSecretNumber": "Votre Nombre Secret",
+    "history": "Historique du Match",
+    "totalGuesses": "{{count}} TENTATIVES TOTALES",
+    "noGuesses": "Le duel a commencé",
+    "higher": "plus haut",
+    "lower": "plus bas",
+    "winnerBadge": "GAGNANT!"
+  },
+  "end": {
+    "victory": "VICTOIRE!",
+    "defeat": "DÉFAITE",
+    "winner": "{{winner}} a gagné",
+    "mainMenu": "Menu Principal"
+  },
+  "error": {
+    "range": "Le choix doit être entre {{min}} e {{max}}",
+    "opponentLeft": "L'adversaire a quitté la partie"
+  }
+}
