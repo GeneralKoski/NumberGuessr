@@ -3,10 +3,41 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
+/** @type {import('express').Application} */
 const app = express();
 app.use(cors());
 
+/**
+ * @typedef {Object} Guess
+ * @property {number} value
+ * @property {'higher' | 'lower' | 'correct'} feedback
+ * @property {boolean} lie
+ * @property {number} timestamp
+ * @property {string} playerId
+ */
+
+/**
+ * @typedef {Object} Player
+ * @property {string} id
+ * @property {string} username
+ * @property {number | null} secretNumber
+ * @property {boolean} hasLied
+ * @property {Guess[]} guesses
+ */
+
+/**
+ * @typedef {Object} Room
+ * @property {string} id
+ * @property {{min: number, max: number}} settings
+ * @property {Player[]} players
+ * @property {'waiting' | 'picking' | 'playing' | 'finished'} status
+ * @property {string} [turn]
+ * @property {string} [winner]
+ */
+
+/** @type {import('http').Server} */
 const httpServer = createServer(app);
+/** @type {Server} */
 const io = new Server(httpServer, {
   cors: {
     origin: "*",
@@ -14,39 +45,53 @@ const io = new Server(httpServer, {
   },
 });
 
+/** @type {Map<string, Room>} */
 const rooms = new Map();
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
   socket.on("create-room", ({ roomId, username, settings }) => {
-    if (rooms.has(roomId)) {
+    /** @type {string} */
+    const rId = roomId;
+    /** @type {string} */
+    const user = username;
+    /** @type {{min: number, max: number}} */
+    const opts = settings || { min: 1, max: 100 };
+
+    if (rooms.has(rId)) {
       socket.emit("error", "Room already exists");
       return;
     }
 
+    /** @type {Room} */
     const room = {
-      id: roomId,
-      settings: settings || { min: 1, max: 100 },
+      id: rId,
+      settings: opts,
       players: [
         {
           id: socket.id,
-          username,
+          username: user,
           secretNumber: null,
           hasLied: false,
           guesses: [],
         },
       ],
-      status: "waiting", // waiting, picking, playing, finished
+      status: "waiting",
     };
 
-    rooms.set(roomId, room);
-    socket.join(roomId);
-    socket.emit("room-joined", { roomId, room });
+    rooms.set(rId, room);
+    socket.join(rId);
+    socket.emit("room-joined", { roomId: rId, room });
   });
 
   socket.on("join-room", ({ roomId, username }) => {
-    const room = rooms.get(roomId);
+    /** @type {string} */
+    const rId = roomId;
+    /** @type {string} */
+    const user = username;
+
+    const room = rooms.get(rId);
     if (!room) {
       socket.emit("error", "Room not found");
       return;
@@ -59,27 +104,32 @@ io.on("connection", (socket) => {
 
     room.players.push({
       id: socket.id,
-      username,
+      username: user,
       secretNumber: null,
       hasLied: false,
       guesses: [],
     });
-    socket.join(roomId);
+    socket.join(rId);
 
     if (room.players.length === 2) {
       room.status = "picking";
     }
 
-    io.to(roomId).emit("room-joined", { roomId, room });
+    io.to(rId).emit("room-joined", { roomId: rId, room });
   });
 
   socket.on("set-secret-number", ({ roomId, number }) => {
-    const room = rooms.get(roomId);
+    /** @type {string} */
+    const rId = roomId;
+    /** @type {number} */
+    const num = parseInt(number);
+
+    const room = rooms.get(rId);
     if (!room) return;
 
     const player = room.players.find((p) => p.id === socket.id);
     if (player) {
-      player.secretNumber = parseInt(number);
+      player.secretNumber = num;
     }
 
     if (room.players.every((p) => p.secretNumber !== null)) {
@@ -87,11 +137,16 @@ io.on("connection", (socket) => {
       room.turn = room.players[0].id; // Player 1 starts
     }
 
-    io.to(roomId).emit("room-update", room);
+    io.to(rId).emit("room-update", room);
   });
 
   socket.on("make-guess", ({ roomId, guess, lie = false }) => {
-    const room = rooms.get(roomId);
+    /** @type {string} */
+    const rId = roomId;
+    /** @type {number} */
+    const guessedValue = parseInt(guess);
+
+    const room = rooms.get(rId);
     if (!room || room.status !== "playing") return;
     if (room.turn !== socket.id) return;
 
@@ -101,8 +156,10 @@ io.on("connection", (socket) => {
     const opponent = room.players[opponentIndex];
 
     const targetValue = opponent.secretNumber;
-    const guessedValue = parseInt(guess);
 
+    if (targetValue === null) return;
+
+    /** @type {'higher' | 'lower' | 'correct'} */
     let feedback;
     let actualLie = false;
 
@@ -134,7 +191,7 @@ io.on("connection", (socket) => {
       room.turn = opponent.id;
     }
 
-    io.to(roomId).emit("room-update", room);
+    io.to(rId).emit("room-update", room);
   });
 
   socket.on("disconnect", () => {
