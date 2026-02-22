@@ -13,7 +13,7 @@ interface LandingProps {
     isPublic?: boolean,
     minRange?: number,
     maxRange?: number,
-  ) => void;
+  ) => Promise<{ error?: string } | void>;
 }
 
 export default function Landing({ onJoinLobby }: LandingProps) {
@@ -48,17 +48,32 @@ export default function Landing({ onJoinLobby }: LandingProps) {
     };
   }, []);
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim())
       return setErrors({ name: t("error.nameRequired", "Name required") });
     setErrors({});
 
     localStorage.setItem("numberguessr_name", name.trim());
-    onJoinLobby(name.trim(), undefined, true, isPublic, minRange, maxRange);
+    const res = await onJoinLobby(
+      name.trim(),
+      undefined,
+      true,
+      isPublic,
+      minRange,
+      maxRange,
+    );
+
+    if (res?.error) {
+      if (res.error === "Room already exists") {
+        setErrors({ general: t("error.roomExists", "Room already exists") });
+      } else {
+        setErrors({ general: res.error });
+      }
+    }
   };
 
-  const handleJoin = (e: React.FormEvent) => {
+  const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: any = {};
     if (!name.trim()) newErrors.name = t("error.nameRequired", "Name required");
@@ -69,8 +84,19 @@ export default function Landing({ onJoinLobby }: LandingProps) {
     setErrors({});
 
     localStorage.setItem("numberguessr_name", name.trim());
-    // In App.tsx we should join using socket
-    onJoinLobby(name.trim(), code.toUpperCase(), false);
+
+    const res = await onJoinLobby(name.trim(), code.toUpperCase(), false);
+    if (res?.error) {
+      if (res.error === "Name already taken in this lobby") {
+        setErrors({ name: t("error.nameTaken", "Name already taken") });
+      } else if (res.error === "Lobby not found") {
+        setErrors({ code: t("error.lobbyNotFound", "Lobby not found") });
+      } else if (res.error === "Lobby full") {
+        setErrors({ code: t("error.lobbyFull", "Lobby full") });
+      } else {
+        setErrors({ general: res.error });
+      }
+    }
   };
 
   const openJoinModal = (lobbyCode?: string) => {

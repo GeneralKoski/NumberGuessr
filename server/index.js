@@ -183,13 +183,13 @@ io.on("connection", (socket) => {
     if (!room) {
       const msg = "Lobby not found";
       if (cb) cb({ error: msg });
-      socket.emit("error", msg);
+      else socket.emit("error", msg);
       return;
     }
     if (room.players.length >= 2) {
       const msg = "Lobby full";
       if (cb) cb({ error: msg });
-      socket.emit("error", msg);
+      else socket.emit("error", msg);
       return;
     }
     if (
@@ -197,7 +197,7 @@ io.on("connection", (socket) => {
     ) {
       const msg = "Name already taken in this lobby";
       if (cb) cb({ error: msg });
-      socket.emit("error", msg);
+      else socket.emit("error", msg);
       return;
     }
 

@@ -63,7 +63,11 @@
   },
   "error": {
     "nameRequired": "Name is required",
+    "nameTaken": "Name already taken",
     "lobbyNotFound": "Lobby not found",
+    "lobbyFull": "Lobby full",
+    "codeRequired": "Code required",
+    "roomExists": "Room already exists",
     "range": "Choice must be between {{min}} and {{max}}",
     "opponentLeft": "Opponent left the game"
   }

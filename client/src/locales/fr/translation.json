@@ -44,6 +44,12 @@
     "mainMenu": "Menu Principal"
   },
   "error": {
+    "nameRequired": "Nom requis",
+    "nameTaken": "Nom déjà pris dans ce lobby",
+    "lobbyNotFound": "Lobby introuvable",
+    "lobbyFull": "Lobby plein",
+    "codeRequired": "Code requis",
+    "roomExists": "La salle existe déjà",
     "range": "Le choix doit être entre {{min}} e {{max}}",
     "opponentLeft": "L'adversaire a quitté la partie"
   }

@@ -31,6 +31,7 @@ export default function App() {
   const [secretInput, setSecretInput] = useState("");
   const [guessInput, setGuessInput] = useState("");
   const [error, setError] = useState("");
+  const [secretError, setSecretError] = useState("");
   const [copied, setCopied] = useState(false);
   const [opponentLeftMsg, setOpponentLeftMsg] = useState(false);
 
@@ -70,30 +71,48 @@ export default function App() {
     minRange?: number,
     maxRange?: number,
   ) => {
-    setUsername(name);
-    if (isCreating) {
-      socket.emit("lobby:create", {
-        name,
-        isPublic,
-        settings: { min: minRange, max: maxRange },
-      });
-    } else {
-      setRoomId(code || "");
-      socket.emit("lobby:join", { name, code });
-    }
+    return new Promise<{ error?: string } | void>((resolve) => {
+      setUsername(name);
+      if (isCreating) {
+        socket.emit(
+          "lobby:create",
+          {
+            name,
+            isPublic,
+            settings: { min: minRange, max: maxRange },
+          },
+          (res: any) => {
+            if (res?.error) {
+              resolve({ error: res.error });
+            } else {
+              resolve();
+            }
+          },
+        );
+      } else {
+        setRoomId(code || "");
+        socket.emit("lobby:join", { name, code }, (res: any) => {
+          if (res?.error) {
+            resolve({ error: res.error });
+          } else {
+            resolve();
+          }
+        });
+      }
+    });
   };
 
   const setSecret = () => {
     const num = parseInt(secretInput);
     if (isNaN(num) || num < room!.settings.min || num > room!.settings.max) {
-      setError(
+      setSecretError(
         t("error.range", { min: room!.settings.min, max: room!.settings.max }),
       );
       return;
     }
     socket.emit("set-secret-number", { roomId: room!.id, number: num });
     setSecretInput("");
-    setError("");
+    setSecretError("");
   };
 
   const makeGuess = () => {
@@ -285,9 +304,9 @@ export default function App() {
                       >
                         {t("picking.confirm")}
                       </button>
-                      {error && (
+                      {secretError && (
                         <p className="text-red-400 text-center font-bold animate-shake">
-                          {error}
+                          {secretError}
                         </p>
                       )}
                     </div>
